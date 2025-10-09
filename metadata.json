@@ -1,0 +1,7 @@
+{
+  "name": "ConfereAI - Smart Student Attendance",
+  "description": "An intelligent student entry and exit control system with facial biometrics and real-time emotion analysis using Gemini AI, Firestore, and MediaPipe.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
