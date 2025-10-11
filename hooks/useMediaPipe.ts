@@ -1,66 +1,88 @@
 
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { FaceLandmarker, FilesetResolver, FaceLandmarkerResult } from '@mediapipe/tasks-vision';
+import { useState, useRef, useCallback } from 'react';
+import { VisionTaskRunner, FilesetResolver, FaceLandmarker, PoseLandmarker, FaceLandmarkerResult, PoseLandmarkerResult } from '@mediapipe/tasks-vision';
 
-let faceLandmarker: FaceLandmarker | null = null;
+type Landmarker = FaceLandmarker | PoseLandmarker;
+type LandmarkerResult = FaceLandmarkerResult | PoseLandmarkerResult;
 
-export const useMediaPipe = (onResults: (results: FaceLandmarkerResult) => void) => {
-  const [isLoading, setIsLoading] = useState(true);
+export type MediaPipeTask = 'FaceLandmarker' | 'PoseLandmarker';
+
+export interface MediaPipeOptions {
+    modelAssetPath: string;
+    delegate?: 'CPU' | 'GPU';
+    numFaces?: number;
+    numPoses?: number;
+}
+
+// A generic hook for MediaPipe vision tasks
+export const useMediaPipe = (onResults: (results: LandmarkerResult) => void) => {
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const landmarkerRef = useRef<Landmarker | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const animationFrameId = useRef<number | null>(null);
-  const lastResultRef = useRef<FaceLandmarkerResult | null>(null);
+  const lastResultRef = useRef<LandmarkerResult | null>(null);
 
-  const initializeMediaPipe = useCallback(async () => {
+  const initialize = useCallback(async (task: MediaPipeTask, options: MediaPipeOptions) => {
+    setIsLoading(true);
+    setError('');
     try {
-      if (faceLandmarker) {
-        setIsLoading(false);
-        return;
-      }
-      
+        if (landmarkerRef.current) {
+            await landmarkerRef.current.close();
+            landmarkerRef.current = null;
+        }
+
       const filesetResolver = await FilesetResolver.forVisionTasks(
         'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/wasm'
       );
-      faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+      
+      const baseOptions = {
         baseOptions: {
-          modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
-          delegate: 'GPU',
+          modelAssetPath: options.modelAssetPath,
+          delegate: options.delegate || 'GPU',
         },
-        outputFaceBlendshapes: true,
-        runningMode: 'VIDEO',
-        numFaces: 1,
-      });
-      setIsLoading(false);
+        runningMode: 'VIDEO' as const,
+      };
+
+      if (task === 'FaceLandmarker') {
+        landmarkerRef.current = await FaceLandmarker.createFromOptions(filesetResolver, {
+            ...baseOptions,
+            outputFaceBlendshapes: true,
+            numFaces: options.numFaces || 1,
+        });
+      } else if (task === 'PoseLandmarker') {
+         landmarkerRef.current = await PoseLandmarker.createFromOptions(filesetResolver, {
+            ...baseOptions,
+            numPoses: options.numPoses || 1,
+         });
+      }
+
     } catch (e: any) {
-      console.error('Failed to initialize MediaPipe:', e);
+      console.error(`Failed to initialize MediaPipe task ${task}:`, e);
       setError('Não foi possível carregar o modelo de IA. Verifique a conexão com a internet.');
-      setIsLoading(false);
+    } finally {
+        setIsLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    initializeMediaPipe();
-  }, [initializeMediaPipe]);
-
   const predictWebcam = useCallback(() => {
-    if (!videoRef.current || !faceLandmarker || videoRef.current.paused || videoRef.current.ended) {
-      if (animationFrameId.current) {
-        cancelAnimationFrame(animationFrameId.current);
-      }
+    const landmarker = landmarkerRef.current;
+    if (!videoRef.current || !landmarker || videoRef.current.paused || videoRef.current.ended) {
+      if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
       return;
     }
     const startTimeMs = performance.now();
-    const results = faceLandmarker.detectForVideo(videoRef.current, startTimeMs);
-    lastResultRef.current = results;
-    onResults(results);
+    const results = (landmarker as VisionTaskRunner).detectForVideo(videoRef.current, startTimeMs);
+    if(results) {
+        lastResultRef.current = results as LandmarkerResult;
+        onResults(results as LandmarkerResult);
+    }
 
     animationFrameId.current = requestAnimationFrame(predictWebcam);
   }, [onResults]);
 
   const startWebcam = useCallback(async (videoElement: HTMLVideoElement) => {
-    if (animationFrameId.current) {
-        cancelAnimationFrame(animationFrameId.current);
-    }
+    if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
 
     videoRef.current = videoElement;
     try {
@@ -70,6 +92,7 @@ export const useMediaPipe = (onResults: (results: FaceLandmarkerResult) => void)
     } catch (err: any) {
         console.error("getUserMedia error:", err);
         setError("Acesso à câmera negado. Por favor, habilite a permissão no seu navegador.");
+        throw err;
     }
   }, [predictWebcam]);
 
@@ -82,8 +105,17 @@ export const useMediaPipe = (onResults: (results: FaceLandmarkerResult) => void)
       const stream = videoRef.current.srcObject as MediaStream;
       stream.getTracks().forEach(track => track.stop());
       videoRef.current.srcObject = null;
+      videoRef.current.removeEventListener('loadeddata', predictWebcam);
     }
-  }, []);
+  }, [predictWebcam]);
+  
+  const close = useCallback(async () => {
+    stopWebcam();
+    if(landmarkerRef.current) {
+        await landmarkerRef.current.close();
+        landmarkerRef.current = null;
+    }
+  }, [stopWebcam]);
 
-  return { startWebcam, stopWebcam, isLoading, error, lastResult: lastResultRef.current };
+  return { initialize, startWebcam, stopWebcam, close, isLoading, error, lastResult: lastResultRef.current };
 };

@@ -1,5 +1,6 @@
+
 import { GoogleGenAI } from "@google/genai";
-import { NormalizedLandmark } from '@mediapipe/tasks-vision';
+import { NormalizedLandmark, Category } from '@mediapipe/tasks-vision';
 import { Emotion, Student, AttendanceLog } from '../types';
 
 let ai: GoogleGenAI | null = null;
@@ -13,8 +14,7 @@ const getAI = (): GoogleGenAI => {
     return ai;
 };
 
-// Function to simplify landmarks for the prompt
-const createFacialMetricsPrompt = (landmarks: NormalizedLandmark[]): string => {
+const getFacialMetricsObject = (landmarks: NormalizedLandmark[]): { [key: string]: number } => {
     const getPoint = (index: number) => ({ x: landmarks[index].x, y: landmarks[index].y });
     
     // Eyebrows (distance from eyes)
@@ -33,23 +33,57 @@ const createFacialMetricsPrompt = (landmarks: NormalizedLandmark[]): string => {
     const eyebrowLiftLeft = Math.hypot(leftEyebrowInner.x - leftEyeUpper.x, leftEyebrowInner.y - leftEyeUpper.y);
     const eyebrowLiftRight = Math.hypot(rightEyebrowInner.x - rightEyeUpper.x, rightEyebrowInner.y - rightEyeUpper.y);
     
-    return `
+    return {
+        'Proporção da Boca': mouthAspectRatio,
+        'Elevação Sobrancelha Esq.': eyebrowLiftLeft,
+        'Elevação Sobrancelha Dir.': eyebrowLiftRight,
+    };
+};
+
+export const getFacialMetrics = getFacialMetricsObject;
+
+// Function to simplify landmarks and blendshapes for the prompt
+const createFacialMetricsPrompt = (landmarks: NormalizedLandmark[], blendshapes?: Category[]): string => {
+    const metrics = getFacialMetricsObject(landmarks);
+    let prompt = `
     Métricas faciais derivadas dos pontos de referência:
-    - Proporção da Boca (maior indica mais aberta/sorrindo): ${mouthAspectRatio.toFixed(3)}
-    - Distância Sobrancelha Esquerda ao Olho: ${eyebrowLiftLeft.toFixed(3)}
-    - Distância Sobrancelha Direita ao Olho: ${eyebrowLiftRight.toFixed(3)}
+    - Proporção da Boca (maior indica mais aberta/sorrindo): ${metrics['Proporção da Boca'].toFixed(3)}
+    - Distância Sobrancelha Esquerda ao Olho: ${metrics['Elevação Sobrancelha Esq.'].toFixed(3)}
+    - Distância Sobrancelha Direita ao Olho: ${metrics['Elevação Sobrancelha Dir.'].toFixed(3)}
     `;
+
+    if (blendshapes && blendshapes.length > 0) {
+        const keyShapes = blendshapes.filter(b => 
+            ['mouthSmileLeft', 'mouthSmileRight', 'jawOpen', 'eyeBlinkLeft', 'eyeBlinkRight', 'browDownLeft', 'browDownRight', 'browInnerUp'].includes(b.categoryName)
+        );
+        prompt += "\n\n    Coeficientes de microexpressões (0 a 1):";
+        keyShapes.forEach(shape => {
+            prompt += `\n    - ${shape.categoryName}: ${shape.score.toFixed(3)}`;
+        });
+    }
+
+    return prompt;
 };
 
 
-export const analyzeEmotions = async (landmarks: NormalizedLandmark[]): Promise<Emotion> => {
+export const analyzeEmotions = async (landmarks: NormalizedLandmark[], blendshapes?: Category[]): Promise<Emotion> => {
     const genAI = getAI();
-    const facialMetrics = createFacialMetricsPrompt(landmarks);
+    const facialMetrics = createFacialMetricsPrompt(landmarks, blendshapes);
     const prompt = `
-    Analise as seguintes métricas faciais para determinar o estado emocional dominante.
-    Escolha APENAS da seguinte lista: 'Afeto Positivo' (alegria/satisfação), 'Baixa Valência' (tristeza/desânimo), 'Alta Excitação' (tensão/estresse), 'Baixa Excitação' (fadiga/desmotivação), 'Neutro'.
-    Responda APENAS com o nome do estado emocional da lista.
+    Você é um especialista em psicologia facial. Sua tarefa é analisar os dados brutos de métricas faciais e microexpressões para determinar o estado emocional dominante.
+    
+    Seja mais sensível a pequenas variações. Um leve sorriso (aumento na 'Proporção da Boca' e pontuação em 'mouthSmile') deve ser classificado como 'Afeto Positivo'. Sobrancelhas franzidas ('browDown') podem indicar 'Alta Excitação' (estresse/concentração). Ausência de movimento significativo indica 'Neutro'.
+    
+    Escolha APENAS da seguinte lista: 
+    - 'Afeto Positivo' (alegria, satisfação)
+    - 'Baixa Valência' (tristeza, desânimo)
+    - 'Alta Excitação' (tensão, estresse, surpresa)
+    - 'Baixa Excitação' (fadiga, desmotivação)
+    - 'Neutro'
+    
+    Responda APENAS com o nome do estado emocional da lista. Não adicione nenhuma outra palavra.
 
+    DADOS ATUAIS:
     ${facialMetrics}
     `;
 
@@ -70,7 +104,6 @@ export const analyzeEmotions = async (landmarks: NormalizedLandmark[]): Promise<
         }
     } catch (error) {
         console.error("Erro ao chamar a API Gemini para análise de emoções:", error);
-        // Retorna 'Neutro' como fallback para não quebrar a UI em tempo real.
         return 'Neutro';
     }
 };

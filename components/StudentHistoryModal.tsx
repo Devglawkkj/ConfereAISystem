@@ -4,7 +4,6 @@ import React, { useState, useMemo } from 'react';
 import { Student, AttendanceLog } from '../types';
 import { generateStudentReport } from '../services/geminiService';
 import { EMOTION_COLORS, EMOTION_EMOJIS } from '../constants';
-// FIX: Import missing icons `ClockIcon` and `SparklesIcon`, and remove unused `BookOpenIcon`.
 import { BrainIcon, XIcon, ClipboardListIcon, ClockIcon, PlusCircleIcon, SparklesIcon } from './icons/Icons';
 
 interface StudentHistoryModalProps {

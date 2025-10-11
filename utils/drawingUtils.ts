@@ -66,8 +66,11 @@ export const drawOnCanvas = (
             x: 1 - lm.x, // Flip x-coordinate
         }));
 
-        // Draw mesh (tesselation) - The "wow" factor
-        drawConnectors(ctx, mirroredLandmarks, FaceLandmarker.FACE_LANDMARKS_TESSELATION as [number, number][], {
+        // Draw mesh (tesselation)
+        const connections = FaceLandmarker.FACE_LANDMARKS_TESSELATION.map(
+            (conn) => [conn.start, conn.end] as [number, number]
+        );
+        drawConnectors(ctx, mirroredLandmarks, connections, {
             color: '#C0C0C070', // A semi-transparent silver color
             lineWidth: 0.5,
         });

@@ -18,10 +18,32 @@ const Header: React.FC<HeaderProps> = ({ setCurrentPage, currentPage }) => {
   return (
     <header className="bg-gray-800 shadow-lg sticky top-0 z-50">
       <nav className="container mx-auto px-6 py-3 flex justify-between items-center">
-        <div className="flex items-center space-x-2">
-          <svg className="w-8 h-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
-          <h1 className="text-xl font-bold text-white">ConfereAI</h1>
-        </div>
+        <h1 className="text-xl font-bold">
+           <a href="#" onClick={(e) => { e.preventDefault(); setCurrentPage('about'); }} aria-label="ConfereAI - Página Inicial" className="flex items-center">
+            <svg width="180" height="34" viewBox="0 0 180 34" xmlns="http://www.w3.org/2000/svg">
+              <style>
+                {`.logo-text { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 30px; font-weight: 700; fill: #4c1d95; }`}
+              </style>
+              <text className="logo-text" x="0" y="28">C</text>
+              <g transform="translate(26, 4)">
+                {/* The eye */}
+                <g stroke="#a78bfa" strokeWidth="1.5" strokeLinecap="round">
+                  <path d="M13 1 V 5" />
+                  <path d="M13 25 V 21" />
+                  <path d="M1 13 H 5" />
+                  <path d="M25 13 H 21" />
+                  <path d="M4.5 4.5 L 7.5 7.5" />
+                  <path d="M21.5 4.5 L 18.5 7.5" />
+                  <path d="M4.5 21.5 L 7.5 18.5" />
+                  <path d="M21.5 21.5 L 18.5 18.5" />
+                </g>
+                <circle cx="13" cy="13" r="8" fill="#84cc16" />
+                <circle cx="13" cy="13" r="4" fill="#4c1d95" />
+              </g>
+              <text className="logo-text" x="58" y="28">nfere AI.</text>
+            </svg>
+           </a>
+        </h1>
         <div className="flex items-center space-x-1 sm:space-x-2">
           {navItems.map(({ page, label, icon }) => (
             <button

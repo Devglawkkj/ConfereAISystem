@@ -1,5 +1,4 @@
 
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useFirestoreMock } from '../hooks/useFirestoreMock';
 import { Page, Student } from '../types';
@@ -23,29 +22,25 @@ const StudentRegistration: React.FC<StudentRegistrationProps> = ({ setCurrentPag
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const onResults = useCallback((results: FaceLandmarkerResult) => {
-    if (results.faceLandmarks && results.faceLandmarks.length > 0) {
+  const onResults = useCallback((results: any) => {
+    const faceResults = results as FaceLandmarkerResult;
+    if (faceResults.faceLandmarks && faceResults.faceLandmarks.length > 0) {
        if (canvasRef.current && videoRef.current) {
         const canvasCtx = canvasRef.current.getContext('2d');
         if (canvasCtx) {
           canvasCtx.save();
           canvasCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-          // Draw video frame
           canvasCtx.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
-          // Draw landmarks
-          results.faceLandmarks.forEach(landmarks => {
-            // Placeholder for drawing if needed, for now just use the data
-          });
           canvasCtx.restore();
         }
       }
     }
   }, []);
 
-  const { startWebcam, stopWebcam, lastResult } = useMediaPipe(onResults);
+  const { initialize, startWebcam, stopWebcam, lastResult } = useMediaPipe(onResults);
 
   useEffect(() => {
-      return () => stopWebcam();
+    return () => { stopWebcam(); };
   }, [stopWebcam]);
 
   const handleStartCapture = async () => {
@@ -54,21 +49,30 @@ const StudentRegistration: React.FC<StudentRegistrationProps> = ({ setCurrentPag
     setPhoto('');
     setSuccess('');
     setIsCapturing(true);
-    await startWebcam(videoRef.current!);
+     await initialize('FaceLandmarker', {
+        modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`
+    });
+    if (videoRef.current) {
+        await startWebcam(videoRef.current);
+    }
   };
   
   const handleCaptureBiometrics = () => {
-      if (lastResult?.faceLandmarks && lastResult.faceLandmarks.length > 0) {
-        const landmarks = lastResult.faceLandmarks[0];
+      const faceResult = lastResult as FaceLandmarkerResult;
+      if (faceResult?.faceLandmarks && faceResult.faceLandmarks.length > 0) {
+        const landmarks = faceResult.faceLandmarks[0];
         setBiometrics(landmarks);
 
-        if (videoRef.current && canvasRef.current) {
+        if (videoRef.current) {
             const canvas = document.createElement('canvas');
-            canvas.width = videoRef.current.videoWidth;
-            canvas.height = videoRef.current.videoHeight;
+            const video = videoRef.current;
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
             const ctx = canvas.getContext('2d');
-            ctx?.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-            setPhoto(canvas.toDataURL('image/jpeg'));
+            if (ctx) {
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                setPhoto(canvas.toDataURL('image/jpeg'));
+            }
         }
         
         setSuccess('Biometria e foto capturadas com sucesso!');
