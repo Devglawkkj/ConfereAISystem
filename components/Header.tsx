@@ -1,25 +1,34 @@
 import React from 'react';
-import { Page } from '../types';
-import { HomeIcon, UserPlusIcon, CameraIcon, LayoutDashboardIcon } from './icons/Icons';
+import { Page, UserRole } from '../types';
+import { HomeIcon, UserPlusIcon, CameraIcon, LayoutDashboardIcon, ShieldCheckIcon } from './icons/Icons';
 
 interface HeaderProps {
   setCurrentPage: (page: Page) => void;
   currentPage: Page;
+  userRole: UserRole | null;
+  handleLogout: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ setCurrentPage, currentPage }) => {
-  const navItems = [
-    { page: 'about' as Page, label: 'Início', icon: <HomeIcon /> },
-    { page: 'dashboard' as Page, label: 'Dashboard', icon: <LayoutDashboardIcon /> },
-    { page: 'register' as Page, label: 'Cadastrar Aluno', icon: <UserPlusIcon /> },
-    { page: 'attendance' as Page, label: 'Registrar Ponto', icon: <CameraIcon /> },
+const roleNames: { [key in UserRole]: string } = {
+  admin: 'Administrador',
+  teacher: 'Professor',
+  therapist: 'Psicopedagogo'
+};
+
+const Header: React.FC<HeaderProps> = ({ setCurrentPage, currentPage, userRole, handleLogout }) => {
+  const allNavItems = [
+    { page: 'dashboard' as Page, label: 'Dashboard', icon: <LayoutDashboardIcon />, roles: ['admin', 'teacher', 'therapist'] },
+    { page: 'register' as Page, label: 'Cadastrar Aluno', icon: <UserPlusIcon />, roles: ['admin'] },
+    { page: 'attendance' as Page, label: 'Registrar Ponto', icon: <CameraIcon />, roles: ['admin', 'teacher'] },
   ];
+
+  const navItems = allNavItems.filter(item => userRole && item.roles.includes(userRole));
 
   return (
     <header className="bg-gray-800 shadow-lg sticky top-0 z-50">
       <nav className="container mx-auto px-6 py-3 flex justify-between items-center">
         <h1 className="text-xl font-bold">
-           <a href="#" onClick={(e) => { e.preventDefault(); setCurrentPage('about'); }} aria-label="ConfereAI - Página Inicial" className="flex items-center">
+           <a href="#" onClick={(e) => { e.preventDefault(); setCurrentPage('dashboard'); }} aria-label="ConfereAI - Página Inicial" className="flex items-center">
             <svg width="180" height="34" viewBox="0 0 180 34" xmlns="http://www.w3.org/2000/svg">
               <style>
                 {`.logo-text { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 30px; font-weight: 700; fill: #4c1d95; }`}
@@ -44,21 +53,33 @@ const Header: React.FC<HeaderProps> = ({ setCurrentPage, currentPage }) => {
             </svg>
            </a>
         </h1>
-        <div className="flex items-center space-x-1 sm:space-x-2">
-          {navItems.map(({ page, label, icon }) => (
-            <button
-              key={page}
-              onClick={() => setCurrentPage(page)}
-              className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
-                currentPage === page
-                  ? 'bg-indigo-500 text-white'
-                  : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-              }`}
-            >
-              {icon}
-              <span className="hidden sm:inline">{label}</span>
+        <div className="flex items-center space-x-2">
+            <div className="hidden sm:flex items-center space-x-2 mr-4 border-r border-gray-600 pr-4">
+              <ShieldCheckIcon className="w-5 h-5 text-indigo-400" />
+              <span className="text-sm font-medium text-gray-300">{userRole ? roleNames[userRole] : ''}</span>
+            </div>
+            {navItems.map(({ page, label, icon }) => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+                  currentPage === page
+                    ? 'bg-indigo-500 text-white'
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                }`}
+              >
+                {icon}
+                <span className="hidden sm:inline">{label}</span>
+              </button>
+            ))}
+             <button
+                onClick={handleLogout}
+                className="text-gray-300 hover:bg-red-600 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+                aria-label="Sair do sistema"
+              >
+                <span className="hidden sm:inline">Sair</span>
+                 <svg className="w-5 h-5 inline sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
             </button>
-          ))}
         </div>
       </nav>
     </header>

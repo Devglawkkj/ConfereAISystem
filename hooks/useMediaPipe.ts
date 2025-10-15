@@ -1,10 +1,14 @@
 
-import { useState, useRef, useCallback } from 'react';
-import { VisionTaskRunner, FilesetResolver, FaceLandmarker, PoseLandmarker, FaceLandmarkerResult, PoseLandmarkerResult } from '@mediapipe/tasks-vision';
 
+import { useState, useRef, useCallback } from 'react';
+// FIX: Removed VisionTaskRunner as it's not an exported type from @mediapipe/tasks-vision.
+import { FilesetResolver, FaceLandmarker, FaceLandmarkerResult, PoseLandmarker, PoseLandmarkerResult } from '@mediapipe/tasks-vision';
+
+// Generalize Landmarker and LandmarkerResult types to support multiple MediaPipe tasks.
 type Landmarker = FaceLandmarker | PoseLandmarker;
 type LandmarkerResult = FaceLandmarkerResult | PoseLandmarkerResult;
 
+// Add 'PoseLandmarker' as a valid task type.
 export type MediaPipeTask = 'FaceLandmarker' | 'PoseLandmarker';
 
 export interface MediaPipeOptions {
@@ -50,11 +54,12 @@ export const useMediaPipe = (onResults: (results: LandmarkerResult) => void) => 
             outputFaceBlendshapes: true,
             numFaces: options.numFaces || 1,
         });
-      } else if (task === 'PoseLandmarker') {
-         landmarkerRef.current = await PoseLandmarker.createFromOptions(filesetResolver, {
+      } 
+      else if (task === 'PoseLandmarker') {
+        landmarkerRef.current = await PoseLandmarker.createFromOptions(filesetResolver, {
             ...baseOptions,
             numPoses: options.numPoses || 1,
-         });
+        });
       }
 
     } catch (e: any) {
@@ -72,7 +77,9 @@ export const useMediaPipe = (onResults: (results: LandmarkerResult) => void) => 
       return;
     }
     const startTimeMs = performance.now();
-    const results = (landmarker as VisionTaskRunner).detectForVideo(videoRef.current, startTimeMs);
+    // FIX: Removed the unnecessary and incorrect cast to VisionTaskRunner.
+    // The landmarker object (FaceLandmarker or PoseLandmarker) has the detectForVideo method directly.
+    const results = landmarker.detectForVideo(videoRef.current, startTimeMs);
     if(results) {
         lastResultRef.current = results as LandmarkerResult;
         onResults(results as LandmarkerResult);
@@ -91,8 +98,13 @@ export const useMediaPipe = (onResults: (results: LandmarkerResult) => void) => 
         videoElement.addEventListener('loadeddata', predictWebcam);
     } catch (err: any) {
         console.error("getUserMedia error:", err);
-        setError("Acesso à câmera negado. Por favor, habilite a permissão no seu navegador.");
-        throw err;
+        let errorMessage = "Ocorreu um erro ao acessar a câmera.";
+        if (err.name === "NotAllowedError") {
+            errorMessage = "Acesso à câmera negado. Por favor, habilite a permissão nas configurações do seu navegador e recarregue a página.";
+        } else if (err.name === "NotFoundError") {
+            errorMessage = "Nenhuma câmera foi encontrada. Verifique se uma câmera está conectada e disponível.";
+        }
+        setError(errorMessage);
     }
   }, [predictWebcam]);
 

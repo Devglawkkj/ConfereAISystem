@@ -1,7 +1,5 @@
-
-
 import React, { useState, useMemo } from 'react';
-import { useFirestoreMock } from '../hooks/useFirestoreMock';
+import { useFirestore } from '../hooks/useFirestoreMock';
 import { Student } from '../types';
 import { generateDashboardInsights } from '../services/geminiService';
 import EngagementChart from './EngagementChart';
@@ -11,14 +9,15 @@ import { BrainIcon, ChartBarIcon, ClockIcon, UsersIcon } from './icons/Icons';
 import StudentHistoryModal from './StudentHistoryModal';
 
 const Dashboard: React.FC = () => {
-  const { students, attendanceLogs, addTherapistNote } = useFirestoreMock();
+  const { students, attendanceLogs, addTherapistNote, loading, error } = useFirestore();
   const [insights, setInsights] = useState<string>('');
   const [isLoadingInsights, setIsLoadingInsights] = useState<boolean>(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [selectedTurma, setSelectedTurma] = useState<string>('Todas');
 
   const turmas = useMemo(() => {
-    const uniqueTurmas = [...new Set(students.map(s => s.turma))];
+    // FIX: Filter out any falsy (null, undefined, empty string) turma values to prevent type errors.
+    const uniqueTurmas = [...new Set(students.map(s => s.turma).filter(Boolean))];
     return ['Todas', ...uniqueTurmas.sort()];
   }, [students]);
 
@@ -59,6 +58,14 @@ const Dashboard: React.FC = () => {
     const totalEngagement = filteredLogs.reduce((acc, log) => acc + log.indiceEngajamento, 0);
     return Math.round(totalEngagement / filteredLogs.length);
   }, [filteredLogs]);
+  
+  if (loading) {
+    return <div className="flex justify-center items-center h-64"><div className="w-16 h-16 border-4 border-t-indigo-500 border-gray-600 rounded-full animate-spin"></div></div>;
+  }
+  
+  if (error) {
+      return <div className="bg-red-900/50 text-red-300 p-4 rounded-md text-center">{error}</div>
+  }
 
   return (
     <div className="space-y-8">

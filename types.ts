@@ -2,6 +2,8 @@ import { NormalizedLandmark } from '@mediapipe/tasks-vision';
 
 export type Page = 'about' | 'dashboard' | 'register' | 'attendance';
 
+export type UserRole = 'admin' | 'teacher' | 'therapist';
+
 export interface Grade {
   disciplina: string;
   nota: number;
@@ -22,11 +24,10 @@ export interface Student {
   turma: string;
   curso: string;
   email: string;
-  urlFoto: string; // data URL
+  urlFoto: string; 
   biometriaFacial: NormalizedLandmark[];
   dataCadastro: Date;
   historicoDeNotas: Grade[];
-  observacoesTerapeuta: TherapistNote[];
 }
 
 export type Emotion = 'Afeto Positivo' | 'Baixa Valência' | 'Alta Excitação' | 'Baixa Excitação' | 'Neutro' | 'Analisando...';

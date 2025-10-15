@@ -1,6 +1,5 @@
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useFirestoreMock } from '../hooks/useFirestoreMock';
+import { useFirestore } from '../hooks/useFirestoreMock';
 import { Page, Student } from '../types';
 import { NormalizedLandmark, FaceLandmarkerResult } from '@mediapipe/tasks-vision';
 import { useMediaPipe } from '../hooks/useMediaPipe';
@@ -11,13 +10,14 @@ interface StudentRegistrationProps {
 }
 
 const StudentRegistration: React.FC<StudentRegistrationProps> = ({ setCurrentPage }) => {
-  const { addStudent } = useFirestoreMock();
+  const { addStudent } = useFirestore();
   const [formData, setFormData] = useState({ nome: '', cpf: '', ra: '', turma: '', curso: '', email: '' });
   const [biometrics, setBiometrics] = useState<NormalizedLandmark[] | null>(null);
-  const [photo, setPhoto] = useState<string>('');
+  const [photo, setPhoto] = useState<string>(''); // photo is a data URL
   const [isCapturing, setIsCapturing] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -37,11 +37,18 @@ const StudentRegistration: React.FC<StudentRegistrationProps> = ({ setCurrentPag
     }
   }, []);
 
-  const { initialize, startWebcam, stopWebcam, lastResult } = useMediaPipe(onResults);
+  const { initialize, startWebcam, stopWebcam, lastResult, error: mediaPipeError } = useMediaPipe(onResults);
 
   useEffect(() => {
     return () => { stopWebcam(); };
   }, [stopWebcam]);
+
+  useEffect(() => {
+    if (mediaPipeError) {
+        setError(mediaPipeError);
+        setIsCapturing(false);
+    }
+  }, [mediaPipeError]);
 
   const handleStartCapture = async () => {
     setError('');
@@ -87,20 +94,31 @@ const StudentRegistration: React.FC<StudentRegistrationProps> = ({ setCurrentPag
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!biometrics || !photo) {
       setError('Por favor, capture a biometria facial antes de cadastrar.');
       return;
     }
-    const newStudent: Omit<Student, 'id' | 'dataCadastro' | 'historicoDeNotas' | 'observacoesTerapeuta'> = {
-      ...formData,
-      biometriaFacial: biometrics,
-      urlFoto: photo,
-    };
-    addStudent(newStudent);
-    setSuccess('Aluno cadastrado com sucesso! Redirecionando...');
-    setTimeout(() => setCurrentPage('dashboard'), 2000);
+    setError('');
+    setSuccess('');
+    setIsSubmitting(true);
+    
+    try {
+        const newStudent: Omit<Student, 'id' | 'dataCadastro' | 'historicoDeNotas'> = {
+            ...formData,
+            biometriaFacial: biometrics,
+            urlFoto: photo, // Pass the data URL to the hook
+        };
+        await addStudent(newStudent);
+        setSuccess('Aluno cadastrado com sucesso! Redirecionando...');
+        setTimeout(() => setCurrentPage('dashboard'), 2000);
+    } catch (err: any) {
+        console.error("Error adding student:", err);
+        setError(err.message || "Ocorreu um erro ao cadastrar o aluno.");
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
   return (
@@ -140,12 +158,12 @@ const StudentRegistration: React.FC<StudentRegistrationProps> = ({ setCurrentPag
             )}
         </div>
 
-        {error && <p className="text-red-400 md:col-span-2 text-center">{error}</p>}
+        {error && <p className="text-red-400 md:col-span-2 text-center bg-red-900/30 p-3 rounded-md">{error}</p>}
         {success && <p className="text-green-400 md:col-span-2 text-center">{success}</p>}
 
         <div className="md:col-span-2">
-          <button type="submit" disabled={!biometrics} className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
-            Cadastrar Aluno
+          <button type="submit" disabled={!biometrics || isSubmitting} className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
+            {isSubmitting ? 'Cadastrando...' : 'Cadastrar Aluno'}
           </button>
         </div>
       </form>
@@ -153,7 +171,6 @@ const StudentRegistration: React.FC<StudentRegistrationProps> = ({ setCurrentPag
   );
 };
 
-// Add a helper style class definition in a global scope if not already present.
 const globalStyles = `
   .input-style {
     background-color: #1F2937;

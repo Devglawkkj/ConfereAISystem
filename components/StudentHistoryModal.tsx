@@ -1,10 +1,9 @@
-
-
-import React, { useState, useMemo } from 'react';
-import { Student, AttendanceLog } from '../types';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Student, AttendanceLog, TherapistNote } from '../types';
 import { generateStudentReport } from '../services/geminiService';
 import { EMOTION_COLORS, EMOTION_EMOJIS } from '../constants';
 import { BrainIcon, XIcon, ClipboardListIcon, ClockIcon, PlusCircleIcon, SparklesIcon } from './icons/Icons';
+import { collection, query, onSnapshot, orderBy, Timestamp, getFirestore } from 'firebase/firestore';
 
 interface StudentHistoryModalProps {
   student: Student;
@@ -17,16 +16,57 @@ const StudentHistoryModal: React.FC<StudentHistoryModalProps> = ({ student, logs
   const [report, setReport] = useState<string>('');
   const [isLoadingReport, setIsLoadingReport] = useState<boolean>(false);
   const [newNote, setNewNote] = useState('');
+  const [therapistNotes, setTherapistNotes] = useState<TherapistNote[]>([]);
+  const [isLoadingNotes, setIsLoadingNotes] = useState(true);
 
   const sortedLogs = useMemo(() => {
     return [...logs].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }, [logs]);
 
+  useEffect(() => {
+    if (!student?.id) return;
+    
+    setIsLoadingNotes(true);
+    const db = getFirestore();
+    const notesCollection = collection(db, 'students', student.id, 'therapistNotes');
+    const q = query(notesCollection, orderBy('data', 'desc'));
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        const fetchedNotes = snapshot.docs.reduce<TherapistNote[]>((acc, doc) => {
+            try {
+                const data = doc.data();
+                if (data.data instanceof Timestamp) {
+                    // Mapeamento explícito para criar um objeto puro
+                    const cleanNote: TherapistNote = {
+                        id: doc.id,
+                        terapeutaNome: data.terapeutaNome,
+                        data: data.data.toDate(),
+                        texto: data.texto,
+                    };
+                    acc.push(cleanNote);
+                } else {
+                    console.warn(`Ignorando nota de terapeuta com data malformada: ${doc.id}`);
+                }
+            } catch (e) {
+                console.error(`Erro ao processar nota de terapeuta ${doc.id}:`, e);
+            }
+            return acc;
+        }, []);
+        setTherapistNotes(fetchedNotes);
+        setIsLoadingNotes(false);
+    }, (error) => {
+        console.error("Error fetching therapist notes: ", error);
+        setIsLoadingNotes(false);
+    });
+
+    return () => unsubscribe();
+  }, [student?.id]);
+
   const handleGenerateReport = async () => {
     setIsLoadingReport(true);
     setReport('');
     try {
-      const generatedReport = await generateStudentReport(student, sortedLogs);
+      const generatedReport = await generateStudentReport(student, sortedLogs, therapistNotes);
       setReport(generatedReport);
     } catch (error) {
       console.error("Error generating student report:", error);
@@ -136,8 +176,9 @@ const StudentHistoryModal: React.FC<StudentHistoryModalProps> = ({ student, logs
             <div>
                <h4 className="text-lg font-semibold text-indigo-400 mb-2 flex items-center space-x-2"><ClipboardListIcon className="w-5 h-5 text-indigo-400"/><span>Observações da Psicoterapeuta</span></h4>
                <div className="space-y-3 max-h-60 overflow-y-auto bg-gray-900/50 rounded-md p-3">
-                    {student.observacoesTerapeuta.length > 0 ? (
-                        [...student.observacoesTerapeuta].sort((a,b) => b.data.getTime() - a.data.getTime()).map(note => (
+                    {isLoadingNotes ? <p className="p-4 text-center text-sm text-gray-500">Carregando notas...</p> :
+                    therapistNotes.length > 0 ? (
+                        therapistNotes.map(note => (
                             <div key={note.id} className="bg-gray-700/50 p-3 rounded-md">
                                 <p className="text-xs text-gray-400 mb-1">
                                     <span className="font-semibold">{note.terapeutaNome}</span> - {note.data.toLocaleDateString()}

@@ -1,7 +1,6 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { NormalizedLandmark, Category } from '@mediapipe/tasks-vision';
-import { Emotion, Student, AttendanceLog } from '../types';
+import { Emotion, Student, AttendanceLog, TherapistNote } from '../types';
 
 let ai: GoogleGenAI | null = null;
 
@@ -146,7 +145,7 @@ export const generateDashboardInsights = async (students: Student[], logs: Atten
     }
 };
 
-export const generateStudentReport = async (student: Student, logs: AttendanceLog[]): Promise<string> => {
+export const generateStudentReport = async (student: Student, logs: AttendanceLog[], notes: TherapistNote[]): Promise<string> => {
     const genAI = getAI();
 
     const logSummary = logs.map(log => ({
@@ -157,7 +156,7 @@ export const generateStudentReport = async (student: Student, logs: AttendanceLo
         disciplina: log.disciplina,
     }));
 
-    if (logSummary.length === 0 && student.observacoesTerapeuta.length === 0) {
+    if (logSummary.length === 0 && notes.length === 0) {
         return "Não há dados suficientes para gerar uma análise para este aluno.";
     }
 
@@ -174,7 +173,7 @@ export const generateStudentReport = async (student: Student, logs: AttendanceLo
     ${JSON.stringify(student.historicoDeNotas, null, 2)}
 
     **3. Observações da Psicoterapeuta:**
-    ${JSON.stringify(student.observacoesTerapeuta, null, 2)}
+    ${JSON.stringify(notes, null, 2)}
 
     **Sua Tarefa:**
     Analise e sintetize TODAS as informações acima. No seu relatório, aborde:
