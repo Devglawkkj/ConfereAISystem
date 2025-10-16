@@ -1,60 +1,64 @@
 # ConfereAI - Sistema Inteligente de Presença de Alunos
 
-Este é um sistema de controle de entrada e saída de alunos com biometria facial e análise de emoções em tempo real usando Gemini AI, Firebase (Cloud Firestore e Storage) e MediaPipe.
+ConfereAI é uma aplicação web inovadora que revoluciona a gestão de presença e o acompanhamento de alunos em ambientes educacionais. Utilizando tecnologias de ponta como biometria facial, inteligência artificial e análise de dados em tempo real, o sistema oferece uma solução completa para um ambiente de aprendizado mais seguro, engajado e perspicaz.
 
-## Guia de Configuração do Projeto (Com um Novo Banco de Dados Firebase)
+## ✨ Funcionalidades Principais
 
-Siga estes passos para conectar o aplicativo a um novo projeto Firebase que você criou do zero.
+O sistema é dividido em módulos que atendem a diferentes necessidades da comunidade escolar:
 
-### Passo 1: Criar um Projeto no Firebase
+-   **👤 Cadastro com Biometria Facial:**
+    -   Administradores podem cadastrar alunos de forma rápida e segura.
+    -   O sistema captura uma foto e extrai um mapa de pontos de referência faciais (biometria) usando MediaPipe, garantindo um identificador único e à prova de fraudes.
 
-1.  Vá para o [Console do Firebase](https://console.firebase.google.com/).
-2.  Clique em **"Adicionar projeto"** e siga as instruções para criar um novo projeto (ex: `confereai-novo`).
+-   **📹 Registro de Ponto Inteligente:**
+    -   Alunos registram sua entrada e saída simplesmente olhando para uma câmera.
+    -   O reconhecimento facial ocorre em tempo real, comparando o rosto detectado com os dados biométricos armazenados no banco de dados.
 
-### Passo 2: Habilitar os Serviços do Firebase
+-   **😊 Análise de Emoção com IA (Gemini):**
+    -   No momento do registro de ponto, a IA do Google Gemini analisa as microexpressões faciais do aluno para inferir seu estado emocional (ex: Afeto Positivo, Tensão, Fadiga).
+    -   Com base na emoção detectada, um **Índice de Engajamento** é calculado, fornecendo um dado valioso para os educadores.
 
-Você precisa habilitar dois serviços principais: o banco de dados e o armazenamento de arquivos.
+-   **📊 Dashboard Interativo:**
+    -   Uma visão centralizada com as métricas mais importantes: total de alunos, registros do dia e média de engajamento.
+    -   Gráficos dinâmicos mostram o engajamento médio por turma e por disciplina, permitindo a identificação de tendências.
+    -   Exibe uma lista com os últimos registros de ponto e os alunos cadastrados.
 
-**A. Habilitar o Cloud Firestore (Banco de Dados):**
-1.  No menu do seu novo projeto, vá em **Build > Cloud Firestore**.
-2.  Clique em **"Criar banco de dados"**.
-3.  Selecione **"Iniciar no modo de teste"**. Isso é crucial, pois define as regras de segurança iniciais para permitir a conexão durante o desenvolvimento.
-4.  Escolha uma localização para o servidor (ex: `southamerica-east1` para São Paulo) e clique em **"Ativar"**.
+-   **🧠 Insights Gerados por IA (Gemini):**
+    -   Com um clique, o sistema utiliza a IA do Gemini para analisar os dados do dashboard e gerar insights acionáveis sobre o comportamento da turma, como padrões de engajamento e possíveis pontos de atenção.
 
-**B. Habilitar o Firebase Storage (Armazenamento de Fotos):**
-1.  No menu do projeto, vá em **Build > Storage**.
-2.  Clique em **"Primeiros passos"**.
-3.  Aceite as regras de segurança padrão (elas também usarão o modo de teste).
-4.  Selecione a mesma localização que você escolheu para o Firestore e clique em **"Concluir"**.
+-   **👩‍🏫 Visão 360° do Aluno:**
+    -   Um perfil detalhado para cada aluno, acessível a partir do dashboard.
+    -   Combina histórico de presença, registros emocionais, notas e observações de psicopedagogos.
+    -   Permite a geração de um **relatório holístico com IA**, que cruza todas as informações disponíveis para fornecer uma análise comportamental completa e recomendações para educadores.
 
-### Passo 3: Obter a Configuração do Firebase para seu Aplicativo Web
+-   **🔐 Controle de Acesso Baseado em Perfis:**
+    -   **Administrador:** Acesso total ao sistema, incluindo cadastro de alunos.
+    -   **Professor:** Focado no dashboard da turma e no registro de ponto.
+    -   **Psicopedagogo:** Acesso aos perfis individuais dos alunos e à funcionalidade de adicionar observações.
 
-1.  No menu, clique no ícone de **engrenagem** ⚙️ ao lado de "Visão geral do projeto" e selecione **"Configurações do projeto"**.
-2.  Na aba "Geral", role para baixo até a seção **"Seus apps"**.
-3.  Clique no ícone **`</>`** para adicionar um aplicativo Web.
-4.  Dê um apelido ao seu aplicativo (ex: "ConfereAI Web") e clique em **"Registrar app"**.
-5.  O Firebase exibirá um objeto de configuração chamado `firebaseConfig`. **Copie este objeto inteiro.**
+-   **🔬 Demonstrações Tecnológicas:**
+    -   **Demo Facial:** Isola a tecnologia de análise facial, mostrando em tempo real métricas como abertura da boca, elevação das sobrancelhas e dezenas de microexpressões (blendshapes).
+    -   **Demo de Pose Corporal:** Utiliza o MediaPipe Pose para detectar e desenhar o esqueleto corporal de uma pessoa em tempo real, demonstrando o potencial de expansão da tecnologia.
 
-### Passo 4: Adicionar a Configuração ao Código do Aplicativo
+## 🚀 Como Funciona?
 
-1.  No código do projeto, abra o arquivo: `hooks/useFirestore.ts`.
-2.  Você encontrará um "molde" de configuração no topo do arquivo.
-3.  **Cole o seu objeto `firebaseConfig`** que você copiou no passo anterior, substituindo completamente o molde.
+O fluxo de dados e interação do sistema segue uma lógica integrada:
 
-### Passo 5: Verificação Final das Regras de Segurança
+1.  **Cadastro (Admin):** O administrador utiliza a interface para preencher os dados do aluno. A câmera é ativada, uma foto é tirada e o MediaPipe processa a imagem para extrair os pontos de referência faciais. Esses dados são salvos no Firebase (informações no Cloud Firestore, foto no Firebase Storage).
 
-Embora o modo de teste configure regras abertas, é sempre bom garantir que elas estão corretas.
+2.  **Reconhecimento (Ponto):** Um aluno se posiciona em frente à câmera. O MediaPipe detecta o rosto e extrai a biometria em tempo real. O sistema compara essa biometria com as armazenadas no banco de dados usando um algoritmo de similaridade de cosseno.
 
-**A. Regras do Firestore:**
-- Vá para **Build > Cloud Firestore > Regras**.
-- Garanta que a regra seja: `allow read, write: if true;`.
+3.  **Análise (IA):** Ao encontrar uma correspondência acima do limiar de confiança, os dados biométricos e de microexpressões são enviados para a API do Google Gemini. A IA retorna uma classificação da emoção predominante.
 
-**B. Regras do Storage:**
-- Vá para **Build > Storage > Regras**.
-- Garanta que a regra seja: `allow read, write: if true;`.
+4.  **Registro (Banco de Dados):** O sistema cria um novo registro de presença no Cloud Firestore, contendo o ID do aluno, nome, tipo de registro (entrada/saída), a emoção detectada e o índice de engajamento calculado.
 
-> **Aviso de Segurança:** Essas regras abertas são **apenas para desenvolvimento**. Antes de lançar o aplicativo em um ambiente de produção, você precisará criar regras mais seguras para proteger os dados.
+5.  **Visualização (Dashboard):** A interface do dashboard escuta as atualizações do Firestore em tempo real. Qualquer novo registro de ponto atualiza instantaneamente os gráficos, as listas e as métricas exibidas para os usuários autorizados.
 
-### Passo 6: Tudo Pronto!
+## 🛠️ Tecnologias Utilizadas
 
-Seu aplicativo agora está totalmente configurado e conectado ao seu novo banco de dados Firebase. Você pode iniciar o aplicativo, cadastrar alunos e ver os dados aparecendo no seu console Firebase.
+-   **Frontend:** React com TypeScript
+-   **Inteligência Artificial:** Google Gemini AI
+-   **Visão Computacional:** Google MediaPipe (FaceLandmarker e PoseLandmarker)
+-   **Backend & Banco de Dados:** Firebase (Cloud Firestore e Storage)
+-   **Estilização:** TailwindCSS
+-   **Gráficos:** Recharts

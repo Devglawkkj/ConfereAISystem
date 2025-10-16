@@ -32,7 +32,9 @@ const StudentHistoryModal: React.FC<StudentHistoryModalProps> = ({ student, logs
     const q = query(notesCollection, orderBy('data', 'desc'));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
-        const fetchedNotes = snapshot.docs.reduce<TherapistNote[]>((acc, doc) => {
+        // FIX: The generic type argument on .reduce() can cause issues with some TypeScript configurations.
+        // Moved the type to an assertion on the initial value to ensure correct type inference.
+        const fetchedNotes = snapshot.docs.reduce((acc, doc) => {
             try {
                 const data = doc.data();
                 if (data.data instanceof Timestamp) {
@@ -51,7 +53,7 @@ const StudentHistoryModal: React.FC<StudentHistoryModalProps> = ({ student, logs
                 console.error(`Erro ao processar nota de terapeuta ${doc.id}:`, e);
             }
             return acc;
-        }, []);
+        }, [] as TherapistNote[]);
         setTherapistNotes(fetchedNotes);
         setIsLoadingNotes(false);
     }, (error) => {
