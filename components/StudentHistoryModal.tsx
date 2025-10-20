@@ -153,7 +153,7 @@ const StudentHistoryModal: React.FC<StudentHistoryModalProps> = ({ student, logs
             <div>
               <h4 className="text-lg font-semibold text-indigo-400 mb-2 flex items-center space-x-2"><BrainIcon className="w-5 h-5 text-indigo-400"/><span>Análise Holística da IA</span></h4>
               {!report && !isLoadingReport && (
-                <button onClick={handleGenerateReport} className="btn-primary flex items-center space-x-2">
+                <button onClick={handleGenerateReport} className="inline-flex items-center gap-2 bg-indigo-600 text-white font-semibold px-4 py-2 rounded-md hover:bg-indigo-700 transition text-sm">
                   <SparklesIcon className="w-5 h-5" />
                   <span>Gerar Análise Holística</span>
                 </button>
@@ -198,9 +198,9 @@ const StudentHistoryModal: React.FC<StudentHistoryModalProps> = ({ student, logs
                     value={newNote}
                     onChange={(e) => setNewNote(e.target.value)}
                     placeholder="Adicionar nova observação..."
-                    className="input-style flex-grow"
+                    className="w-full bg-gray-800 border border-gray-600 text-gray-100 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                    />
-                   <button type="submit" className="btn-secondary p-2.5" aria-label="Adicionar Observação"><PlusCircleIcon className="w-5 h-5"/></button>
+                   <button type="submit" className="bg-gray-700 text-white font-semibold p-2.5 rounded-md hover:bg-gray-600 transition" aria-label="Adicionar Observação"><PlusCircleIcon className="w-5 h-5"/></button>
                </form>
             </div>
           </div>
@@ -211,53 +211,6 @@ const StudentHistoryModal: React.FC<StudentHistoryModalProps> = ({ student, logs
   );
 };
 
-const globalStyles = `
-  .input-style {
-    background-color: #1F2937;
-    border: 1px solid #4B5563;
-    color: #F9FAFB;
-    padding: 0.5rem 0.75rem;
-    border-radius: 0.375rem;
-    width: 100%;
-    font-size: 0.875rem;
-  }
-  .input-style:focus {
-    outline: none;
-    border-color: #6366F1;
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5);
-  }
-  .btn-primary {
-    background-color: #4F46E5;
-    color: white;
-    font-weight: 600;
-    padding: 0.5rem 1rem;
-    border-radius: 0.375rem;
-    transition: background-color 0.2s;
-    font-size: 0.875rem;
-  }
-  .btn-primary:hover {
-    background-color: #4338CA;
-  }
-  .btn-secondary {
-    background-color: #374151;
-    color: white;
-    font-weight: 600;
-    padding: 0.5rem 1rem;
-    border-radius: 0.375rem;
-    transition: background-color 0.2s;
-    font-size: 0.875rem;
-  }
-  .btn-secondary:hover {
-    background-color: #4B5563;
-  }
-`;
-
-const styleSheet = document.createElement("style");
-if (!document.querySelector('#student-history-styles')) {
-    styleSheet.id = 'student-history-styles';
-    styleSheet.innerText = globalStyles;
-    document.head.appendChild(styleSheet);
-}
 
 
 export default StudentHistoryModal;

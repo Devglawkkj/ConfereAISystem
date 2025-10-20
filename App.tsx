@@ -1,62 +1,39 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header';
-import About from './components/About';
 import Dashboard from './components/Dashboard';
 import StudentRegistration from './components/StudentRegistration';
 import AttendanceCheck from './components/AttendanceCheck';
 import LoginScreen from './components/LoginScreen';
-import { Page, UserRole } from './types';
+import About from './components/About';
+import { useAuth } from './contexts/AuthContext';
+import { RequireAuth, RequireRole } from './router/protected';
 
 const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<Page>('about');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userRole, setUserRole] = useState<UserRole | null>(null);
-
-  const handleLogin = (role: UserRole) => {
-    setUserRole(role);
-    setIsLoggedIn(true);
-    // Default page after login based on role
-    if (role === 'admin' || role === 'teacher' || role === 'therapist') {
-      setCurrentPage('dashboard');
-    }
-  };
-
-  const handleLogout = () => {
-    setUserRole(null);
-    setIsLoggedIn(false);
-    setCurrentPage('about');
-  };
-
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'about':
-        return <About />;
-      case 'dashboard':
-        return <Dashboard />;
-      case 'register':
-        // Only admin can register students
-        return userRole === 'admin' ? <StudentRegistration setCurrentPage={setCurrentPage} /> : <Dashboard />;
-      case 'attendance':
-        return <AttendanceCheck />;
-      default:
-        return <About />;
-    }
-  };
-
-  if (!isLoggedIn) {
-    return <LoginScreen onLogin={handleLogin} />;
-  }
+  const { isLoggedIn } = useAuth();
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 font-sans">
-      <Header 
-        setCurrentPage={setCurrentPage} 
-        currentPage={currentPage} 
-        userRole={userRole}
-        handleLogout={handleLogout}
-      />
-      <main className="p-4 sm:p-6 md:p-8">
-        {renderPage()}
+    <div className="min-h-screen bg-gray-900 text-gray-100">
+      {isLoggedIn && <Header />}
+      <main className="p-4">
+        <Routes>
+          <Route path="/login" element={<LoginScreen />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
+          <Route
+            path="/register"
+            element={
+              <RequireAuth>
+                <RequireRole allowedRoles={["admin"]}>
+                  <StudentRegistration />
+                </RequireRole>
+              </RequireAuth>
+            }
+          />
+          <Route path="/attendance" element={<RequireAuth><AttendanceCheck /></RequireAuth>} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
       </main>
     </div>
   );

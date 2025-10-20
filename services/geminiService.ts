@@ -8,7 +8,11 @@ let ai: GoogleGenAI | null = null;
 // The application now assumes the API_KEY is available as an environment variable.
 const getAI = (): GoogleGenAI => {
     if (!ai) {
-        ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
+        if (!apiKey) {
+            console.warn("VITE_GEMINI_API_KEY não encontrado nas variáveis de ambiente. Configure o arquivo .env.");
+        }
+        ai = new GoogleGenAI({ apiKey: apiKey || '' });
     }
     return ai;
 };

@@ -30,7 +30,7 @@ const StepCard: React.FC<{ icon: React.ReactNode; title: string; children: React
 
 const About: React.FC = () => {
   return (
-    <div className="space-y-16 animate-fade-in">
+    <div className="space-y-16">
         <section className="text-center bg-gray-800/50 p-10 rounded-xl shadow-2xl border border-gray-700">
             <h1 className="text-4xl md:text-5xl font-extrabold text-indigo-400 mb-4">
                 Bem-vindo ao ConfereAI
@@ -114,21 +114,5 @@ const About: React.FC = () => {
   );
 };
 
-
-// Add helper styles for animations
-const styleSheet = document.createElement("style");
-if (!document.querySelector('#about-page-styles')) {
-    styleSheet.id = 'about-page-styles';
-    styleSheet.innerText = `
-      @keyframes fade-in {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-      .animate-fade-in {
-        animation: fade-in 0.6s ease-out forwards;
-      }
-    `;
-    document.head.appendChild(styleSheet);
-}
 
 export default About;

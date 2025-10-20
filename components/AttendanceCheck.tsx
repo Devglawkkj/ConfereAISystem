@@ -220,8 +220,8 @@ const AttendanceCheck: React.FC = () => {
     const renderModeSwitcher = () => (
       <div className="flex justify-center mb-4">
           <div className="bg-gray-700 p-1 rounded-xl flex space-x-1 shadow-inner">
-              <button onClick={() => setMode('recognition')} className={`btn-mode ${mode === 'recognition' ? 'bg-indigo-500 text-white shadow-md' : 'text-gray-300 hover:bg-gray-600'}`}><UsersIcon className="w-5 h-5" /><span>Reconhecimento</span></button>
-              <button onClick={() => setMode('face_demonstration')} className={`btn-mode ${mode === 'face_demonstration' ? 'bg-purple-500 text-white shadow-md' : 'text-gray-300 hover:bg-gray-600'}`}><SparklesIcon className="w-5 h-5" /><span>Demo Facial</span></button>
+              <button onClick={() => setMode('recognition')} className={`${mode === 'recognition' ? 'bg-indigo-500 text-white shadow-md' : 'text-gray-300 hover:bg-gray-600'} px-4 py-2 rounded-xl font-medium transition-all flex items-center gap-2`}><UsersIcon className="w-5 h-5" /><span>Reconhecimento</span></button>
+              <button onClick={() => setMode('face_demonstration')} className={`${mode === 'face_demonstration' ? 'bg-purple-500 text-white shadow-md' : 'text-gray-300 hover:bg-gray-600'} px-4 py-2 rounded-xl font-medium transition-all flex items-center gap-2`}><SparklesIcon className="w-5 h-5" /><span>Demo Facial</span></button>
           </div>
       </div>
     );
@@ -272,15 +272,15 @@ const AttendanceCheck: React.FC = () => {
                 {mode === 'recognition' && (
                     <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
                         {recognizedStudent ? (
-                            <div className="text-center animate-fade-in">
+                            <div className="text-center">
                                 <img src={lastSuccessfulCapture?.photo} alt={recognizedStudent.nome} className="w-40 h-40 rounded-full mx-auto mb-4 border-4 border-green-500 object-cover"/>
                                 <h3 className="text-2xl font-bold">{recognizedStudent.nome}</h3>
                                 <p className="text-indigo-400">{recognizedStudent.curso} - {recognizedStudent.turma}</p>
                                 <p className={`text-2xl font-bold mt-4 ${isEmotionAnalysisEnabled ? 'text-green-400' : 'text-gray-500'}`}>{currentEmotion}</p>
 
                                 <div className="mt-6 flex justify-center space-x-4">
-                                    <button onClick={() => handleLogAttendance('entrada')} disabled={isProcessing} className="btn-success">Registrar Entrada</button>
-                                    <button onClick={() => handleLogAttendance('saida')} disabled={isProcessing} className="btn-danger">Registrar Saída</button>
+                                    <button onClick={() => handleLogAttendance('entrada')} disabled={isProcessing} className="px-6 py-3 rounded-md font-semibold text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition">Registrar Entrada</button>
+                                    <button onClick={() => handleLogAttendance('saida')} disabled={isProcessing} className="px-6 py-3 rounded-md font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition">Registrar Saída</button>
                                 </div>
                             </div>
                         ) : (
@@ -294,7 +294,7 @@ const AttendanceCheck: React.FC = () => {
                 )}
                 
                 {mode === 'face_demonstration' && (
-                    <div className="bg-gray-800 p-6 rounded-lg shadow-lg animate-fade-in">
+                    <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
                          <h3 className="text-xl font-semibold mb-4 text-purple-400 flex items-center space-x-2"><CpuChipIcon className="w-5 h-5"/><span>Métricas Faciais em Tempo Real</span></h3>
                          <div className="space-y-3">
                              {facialMetrics ? (
@@ -344,44 +344,5 @@ const AttendanceCheck: React.FC = () => {
         </div>
     );
 };
-
-// Add helper style class definition in a global scope if not already present.
-const globalStyles = `
-  .btn-mode {
-    padding: 0.5rem 1rem;
-    border-radius: 0.75rem;
-    font-weight: 500;
-    transition: all 0.2s ease-in-out;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .btn-success {
-    background-color: #16A34A; color: white; padding: 0.75rem 1.5rem; border-radius: 0.375rem; font-weight: 600; transition: background-color 0.2s;
-  }
-  .btn-success:hover { background-color: #15803D; }
-  .btn-danger {
-    background-color: #DC2626; color: white; padding: 0.75rem 1.5rem; border-radius: 0.375rem; font-weight: 600; transition: background-color 0.2s;
-  }
-  .btn-danger:hover { background-color: #B91C1C; }
-  .btn-success:disabled, .btn-danger:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-  }
-  @keyframes fade-in {
-    from { opacity: 0; transform: translateY(5px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .animate-fade-in {
-    animation: fade-in 0.4s ease-out forwards;
-  }
-`;
-const styleSheet = document.createElement("style");
-if (!document.querySelector('#attendance-check-styles')) {
-    styleSheet.id = 'attendance-check-styles';
-    styleSheet.innerText = globalStyles;
-    document.head.appendChild(styleSheet);
-}
-
 
 export default AttendanceCheck;

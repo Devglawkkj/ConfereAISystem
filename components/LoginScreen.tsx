@@ -1,10 +1,9 @@
 import React from 'react';
 import { UserRole } from '../types';
 import { ShieldCheckIcon, BookOpenIcon, ClipboardListIcon } from './icons/Icons';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
-interface LoginScreenProps {
-  onLogin: (role: UserRole) => void;
-}
 
 const RoleCard: React.FC<{ icon: React.ReactNode; title: string; description: string; onClick: () => void; color: string; }> = 
 ({ icon, title, description, onClick, color }) => (
@@ -23,7 +22,9 @@ const RoleCard: React.FC<{ icon: React.ReactNode; title: string; description: st
 );
 
 
-const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
+const LoginScreen: React.FC = () => {
+  const { login } = useAuth();
+  const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col justify-center items-center p-4">
       <header className="text-center mb-12">
@@ -60,21 +61,21 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
             icon={<ShieldCheckIcon className="w-8 h-8 text-indigo-400"/>} 
             title="Administrador"
             description="Acesso total ao sistema, incluindo cadastro de alunos, painéis de controle e configurações."
-            onClick={() => onLogin('admin')}
+            onClick={() => { login('admin'); navigate('/dashboard'); }}
             color="focus:ring-indigo-500"
         />
         <RoleCard 
             icon={<BookOpenIcon className="w-8 h-8 text-green-400"/>} 
             title="Professor"
             description="Acesse o dashboard da turma, registre presenças e acompanhe o engajamento dos alunos."
-            onClick={() => onLogin('teacher')}
+            onClick={() => { login('teacher'); navigate('/dashboard'); }}
             color="focus:ring-green-500"
         />
         <RoleCard 
             icon={<ClipboardListIcon className="w-8 h-8 text-purple-400"/>} 
             title="Psicopedagogo"
             description="Visualize análises comportamentais, relatórios individuais e adicione observações."
-            onClick={() => onLogin('therapist')}
+            onClick={() => { login('therapist'); navigate('/dashboard'); }}
             color="focus:ring-purple-500"
         />
       </main>
